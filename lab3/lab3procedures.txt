@@ -1,0 +1,8 @@
+McClane Howland
+CS10
+5/3/17
+
+What is the largest factorial that your program can compute? Why?
+	31, because 31! is larger than 2^32-1, meaning that anything larger will result in overflow 		and incorrect results
+
+

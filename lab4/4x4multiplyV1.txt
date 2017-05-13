@@ -1,0 +1,142 @@
+main:
+	#input first matrix and move it to $a0
+	la $t0, M
+	jal matrixin
+	la $a1, M
+	#input second matrix and move it to $a1
+	la $t0, N
+	jal matrixin
+	la $a2, N
+	#multiply the matrices in $a0 and $a1 
+	li $t0, 1
+	la $a0, resultmatrix
+	jal matrixmultiply
+	move $t0, $a0
+	jal matrixout
+	
+	
+	li $v0, 10 #end the program
+	syscall
+	
+
+matrixin: #this will store the matrix in the address in register $t0
+	li $s1, 0 #index variable for the array address
+	add $s1, $s1, $t0 #add the address of the array to the index variable
+	li $s2, 0 #index variable for the input string address
+	li $s4, 0 #will be the inner loop limit
+	li $s3, 1 #index variable for the input row
+	outerloop: #outerloop goes through the rows
+		#print "input row"
+		li $v0, 4 #load the string output code
+		la $a0, prompt_input
+		syscall 
+		li $v0, 1
+		move $a0, $s3
+		syscall
+		li $v0, 4
+		la $a0, colon
+		syscall #print the colon and space at the end of the prompt
+		#get the input string
+		li $v0, 8 #string input code
+		la $a0, input_string
+		lw $a1, input_string_length
+		syscall
+		la $t1, input_string #load the inputted string into $t1
+		add $s2, $s2, $t1 #add the address of the string to the address index variable
+		move $s4, $t1 #create the index limit for the inner loop
+		addi $s4, $s4, 8
+		innerloop: #innerloop parses through the input string
+			#parse the input string
+			lb $t2, 0($s2) #load the byte from the string
+			subi $t2, $t2, 48 #convert from ascii code to the number that code represents
+			sw $t2, 0($s1) #store the int into the array
+			#increment the string and array address counters
+			addi $s2, $s2, 2
+			addi $s1, $s1, 4
+			beq $s2, $s4, endinner #check if the string counter is past 8
+			j innerloop
+		endinner:
+			li $s2, 0
+		#increment the row counter
+		addi $s3, $s3, 1
+		beq $s3, 5, endouter
+		j outerloop
+	endouter:
+	
+	jr $ra
+
+matrixout: #this will print the matrix at the address stored in register $t0
+	li $s0, 0 #array increment variable
+	add $s0, $s0, $t0 #add the base address of the array to the increment variable
+	li $s1, 0 #loop limit
+	add $s1, $s0, 64 #add the length of the array (x4) to the address of the array to create a loop limit
+	li $s2, 1
+	loop:
+		li $v0, 1
+		lw $a0, 0($s0)
+		syscall
+		li $v0, 4
+		la $a0, space
+		syscall
+		beq $s2, 4, newline
+		j nonewline
+		newline:
+			li $v0, 4
+			la $a0, newlinecharacter
+			syscall
+			li $s2, 0
+		nonewline:
+		
+		addi $s0, $s0, 4 #increment the array variable
+		addi $s2, $s2, 1 #newline variable
+		beq $s0, $s1, end
+		j loop
+		
+		
+	end:
+	
+	jr $ra
+	
+matrixmultiply:
+	li $t1, 32
+	li $s0, 0
+	L1: li $s1, 0
+	L2: li $s2, 0
+	sll $t2, $s0, 5
+	add $t2, $t2, $s1
+	sll $t2, $t2,, 3
+	add $t2, $a0, $t2
+	lw $s4, 0 ($t2)
+	L3: sll $t0, $s2, 5
+	add $t0, $t0, $s1
+	sll $t0, $t0, 3
+	add $t0, $a2, $t0
+	lw $s6, 0($t0)
+	sll $t0, $s0, 5
+	add $t0, $t0, $s2
+	sll $t0, $t0, 3
+	add $t0, $a1, $t0
+	lw $s7, 0($t0)
+	mul $s6, $s7, $s6
+	add $s4, $s4, $s6
+	addi $s2, $s2, 1
+	bne $s2, $t1, L3
+	sw $s4, 0($t2)
+	addi $s1, $s1, 1
+	bne $s1, $t1, L2
+	addi $s0, $s0, 1
+	bne $s0, $t1, L1
+	
+	jr $ra
+		
+				
+.data
+prompt_input: .asciiz "Input Row "
+colon: .asciiz ": "
+space: .asciiz " "
+newlinecharacter: .asciiz "\n"
+input_string: .space 50
+input_string_length: .word 50
+M: .space 100
+N: .space 100
+resultmatrix: .space 100
